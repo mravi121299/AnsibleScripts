@@ -1,0 +1,27 @@
+---
+- name: Delete network interface
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+  - name: Reading CSV File
+    read_csv:
+      path: network_interfaces_2023-05-29_13_21_31.csv
+    register: interfaces
+  # - debug:
+  #     var: interfaces
+
+  - name: Taking output of ENI_ID
+    lineinfile:
+         path: ./test.txt
+         line: "{{item.ENI_ID}}"
+    with_items:
+         - "{{interfaces.list}}"
+
+  # - name: Deleteting network interfaces
+  #   amazon.aws.ec2_eni:
+  #     eni_id: {{item.ENI_ID}}
+  #     force_detach: true
+  #     state: absent
+  #   with_items:
+  #     - "{{interfaces.list}}"
