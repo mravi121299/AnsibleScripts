@@ -18,7 +18,8 @@
     with_items:
          - "{{interfaces.list}}"
 
-   - name: Deleteting network interfac   amazon.aws.ec2_eni:
+   - name: Deleteting network interfaces
+     amazon.aws.ec2_eni:
        eni_id: {{item.ENI_ID}}
        force_detach: true
        state: absent
