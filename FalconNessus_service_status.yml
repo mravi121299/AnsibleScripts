@@ -21,6 +21,7 @@
       register: nessus_status
       ignore_errors: yes
 
+ ########################### STATUS Verification ##########################################
   
     # - name: Extract Falcon service status
     #   set_fact:
