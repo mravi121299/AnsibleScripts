@@ -1,0 +1,49 @@
+---
+- name: Check Falcon and Nessus Agent service status
+  hosts: servers
+  gather_facts: false
+  vars:
+    path: ./nessus.csv
+    cl1: Server_IP
+    cl2: Falcon_Sataus
+    cl3: Nessus_Status
+
+  tasks:
+    - name: Check Falcon service status
+      become: true
+      command: systemctl status falcon-sensor
+      register: falcon_status
+      ignore_errors: yes
+
+    - name: Check Nessus Agent service status
+      become: true
+      command: systemctl status nessusagent.service
+      register: nessus_status
+      ignore_errors: yes
+
+  
+    # - name: Extract Falcon service status
+    #   set_fact:
+    #     falcon: "{{ falcon_status.stdout | regex_search('Active: active') }}"
+    # - name: Extract Nessus service status
+    #   set_fact:
+    #     nessus: "{{ nessus_status.stdout | regex_search('Active: active') }}"
+
+    # - name: Print Falcon service status
+    #   debug:
+    #     msg: "Falcon service status: {{ falcon }}"
+    # - name: Print nessus service status
+    #   debug:
+    #     msg: "Nessus service status: {{ nessus }}"
+
+ ########################### TAKING OUTPUT IN CSV ##########################################
+    - name: Writing CSV Header
+      local_action:
+        module: lineinfile
+        path: "{{ path }}"
+        line: "{{ cl1 }},{{ cl2 }},{{ cl3 }}"
+    - name: Exporting output to CSV
+      local_action:
+        module: lineinfile
+        path: "{{ path }}"
+        line: "{{ ansible_host }},{{ 'Active' if hostvars[inventory_hostname].falcon_status.stdout | regex_search('Active: active') else 'InActive' if hostvars[inventory_hostname].falcon_status.stdout | regex_search('Active: inactive') else 'Not_Installed' }},{{ 'Active' if hostvars[inventory_hostname].nessus_status.stdout | regex_search('Active: active') else 'InActive' if hostvars[inventory_hostname].nessus_status.stdout | regex_search('Active: inactive') else 'Not_Installed' }}"
