@@ -1,6 +1,6 @@
 ---
 - name: Check Falcon and Nessus Agent service status
-  hosts: servers
+  hosts: servers # servrs ip are listed in the servers.ini file.
   gather_facts: false
   vars:
     path: ./nessus.csv
