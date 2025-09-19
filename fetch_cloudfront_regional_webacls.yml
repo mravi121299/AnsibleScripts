@@ -4,7 +4,8 @@
   gather_facts: no
 
   vars:
-    output_file: "CLOUDFRONTwebacls.csv"
+    output_file1: "CLOUDFRONTwebacls.csv"
+    output_file2: "regional_webacl.csv"
 
   tasks:
     #------------------------------------- FETCHING CLOUDFRONT WEB ACL'S RULE NAMES ----------------------------------------------------#
@@ -66,7 +67,7 @@
       loop_control:
         label: "{{ item.item.Name }}"
 
-    #------------------------------------- CF DATA AND GENERATING CSV ----------------------------------------------------#
+    #------------------------------------- CloudFront DATA AND GENERATING CSV ----------------------------------------------------#
 
     # - name: Merge Web ACL data
     #   set_fact:
@@ -79,10 +80,10 @@
           {% for acl in web_acl_info %}
           {{ acl.Name }},{{ acl.ID }},{{ acl.Rules }}
           {% endfor %}
-        dest: "{{ output_file }}"
+        dest: "{{ output_file1 }}"
       when: web_acl_info is defined
 
-    #------------------------------------- Reg DATA AND GENERATING CSV ----------------------------------------------------#
+    #------------------------------------- Regional DATA AND GENERATING CSV ----------------------------------------------------#
 
 
     - name: Generate CSV content
@@ -92,6 +93,6 @@
           {% for acl in reg_web_acl_info %}
           {{ acl.Name }},{{ acl.ID }},{{ acl.Rules }}
           {% endfor %}
-        dest: "./regional_webacl.csv"
+        dest: "output_file2"
       when: reg_web_acl_info is defined
 
