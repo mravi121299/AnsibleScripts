@@ -1,0 +1,97 @@
+---
+- name: Fetch Web ACL details from AWS WAFv2
+  hosts: localhost
+  gather_facts: no
+
+  vars:
+    output_file: "CLOUDFRONTwebacls.csv"
+
+  tasks:
+    #------------------------------------- FETCHING CLOUDFRONT WEB ACL'S RULE NAMES ----------------------------------------------------#
+    - name: List all Cloudfront Web ACLs
+      command: aws wafv2 list-web-acls --scope "CLOUDFRONT" --region us-east-1
+      register: web_acl_list
+      changed_when: false
+
+    - name: Set Web ACL details
+      set_fact:
+        web_acls: "{{ (web_acl_list.stdout | from_json).WebACLs }}"
+
+    - name: Fetch CF Web ACL details for each Web ACL
+      command: aws wafv2 get-web-acl --name {{ item.Name }} --scope "CLOUDFRONT" --id {{ item.Id }} --region us-east-1
+      loop: "{{ web_acls }}"
+      register: web_acl_details
+      changed_when: false
+      failed_when: false
+
+    - name: Collect CF Web ACL details
+      set_fact:
+        web_acl_info: "{{ web_acl_info | default([]) + [{
+          'Name': (item.stdout | from_json).WebACL.Name,
+          'ID': (item.stdout | from_json).WebACL.Id,
+          'Rules': (item.stdout | from_json).WebACL.Rules | map(attribute='Name') | list
+         }] }}"
+      loop: "{{ web_acl_details.results }}"
+      when: item.stdout is defined and item.stdout | length > 0
+      loop_control:
+        label: "{{ item.item.Name }}"
+
+    #------------------------------------- FETCHING REGIONAL WEB ACL'S RULE NAMES ----------------------------------------------------#
+    
+    - name: List all Regional Web ACLs
+      command: aws wafv2 list-web-acls --scope "REGIONAL" --region us-east-1
+      register: reg_web_acl_list
+      changed_when: false
+
+    - name: Set Reg Web ACL details
+      set_fact:
+        reg_web_acls: "{{ (reg_web_acl_list.stdout | from_json).WebACLs }}"
+
+    - name: Fetch  Reg Web ACL details for each Web ACL
+      command: aws wafv2 get-web-acl --name {{ item.Name }} --scope "REGIONAL" --id {{ item.Id }} --region us-east-1
+      loop: "{{ reg_web_acls }}"
+      register: reg_web_acl_details
+      changed_when: false
+      failed_when: false
+
+    - name: Collect Web ACL details
+      set_fact:
+        reg_web_acl_info: "{{ reg_web_acl_info | default([]) + [{
+          'Name': (item.stdout | from_json).WebACL.Name,
+          'ID': (item.stdout | from_json).WebACL.Id,
+          'Rules': (item.stdout | from_json).WebACL.Rules | map(attribute='Name') | list
+         }] }}"
+      loop: "{{ reg_web_acl_details.results }}"
+      when: item.stdout is defined and item.stdout | length > 0
+      loop_control:
+        label: "{{ item.item.Name }}"
+
+    #------------------------------------- CF DATA AND GENERATING CSV ----------------------------------------------------#
+
+    # - name: Merge Web ACL data
+    #   set_fact:
+    #     all_web_acl_info: "{{ web_acl_info + reg_web_acl_info }}"
+
+    - name: Generate CSV content
+      copy:
+        content: |
+          Name,ID,Rules
+          {% for acl in web_acl_info %}
+          {{ acl.Name }},{{ acl.ID }},{{ acl.Rules }}
+          {% endfor %}
+        dest: "{{ output_file }}"
+      when: web_acl_info is defined
+
+    #------------------------------------- Reg DATA AND GENERATING CSV ----------------------------------------------------#
+
+
+    - name: Generate CSV content
+      copy:
+        content: |
+          Name,ID,Rules
+          {% for acl in reg_web_acl_info %}
+          {{ acl.Name }},{{ acl.ID }},{{ acl.Rules }}
+          {% endfor %}
+        dest: "./regional_webacl.csv"
+      when: reg_web_acl_info is defined
+
