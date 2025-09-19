@@ -93,6 +93,11 @@
           {% for acl in reg_web_acl_info %}
           {{ acl.Name }},{{ acl.ID }},{{ acl.Rules }}
           {% endfor %}
-        dest: "output_file2"
+        dest: "{{ output_file2 }}"
       when: reg_web_acl_info is defined
 
+# -------------------------------
+# Lists CloudFront Web ACLs in us-east-1, fetches details, saves to CLOUDFRONTwebacls.csv
+# Lists Regional Web ACLs in us-east-1, fetches details, saves to regional_webacl.csv.
+# Each CSV contains Name, ID, and Rules for the Web ACLs.
+# -------------------------------
