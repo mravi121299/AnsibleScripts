@@ -1,0 +1,53 @@
+- hosts: localhost
+  gather_facts: false
+  vars:
+    cl1: AccountName
+    cl2: Region
+    cl3: TaskDefinitionArn
+    cl4: MountPoints
+    cl5: ContainerPath
+    cl6: ReadOnly
+  tasks:
+    - name: Reading CSV File
+      read_csv:
+        path: nat.csv
+      register: arn
+
+    - name: Create empty list for results
+      set_fact:
+        results: []
+
+    - name: Describing task definition
+      shell: aws ecs describe-task-definition --task-definition "{{ item.TaskDefinitionArn }}"
+      loop: "{{ arn.list }}"
+      register: definition
+
+    - debug:
+        var: definition.results
+
+    - name: Adding data to results list
+      set_fact:
+        results: "{{ results + [{'AccountName': item.item.Account, 'Region': item.item.Region, 'TaskDefinitionArn': item.item.TaskDefinitionArn, 'MountPoints': mount_points}] }}"
+      loop: "{{ definition.results }}"
+      vars:
+        mount_points: "{{ (item.stdout | from_json).taskDefinition.containerDefinitions[0].mountPoints }}"
+
+    - name: Write CSV header
+      lineinfile:
+        path: output.csv
+        line: "{{ cl1 }},{{ cl2 }},{{ cl3 }},{{ cl4 }},{{ cl5 }},{{ cl6 }}"
+
+    - name: Export data to CSV file
+      lineinfile:
+        path: output.csv
+        line: |
+          {% for result in results %}
+            {% if result.MountPoints %}
+              {% for mount_point in result.MountPoints %}
+                {{ result.AccountName }},{{ result.Region }},{{ result.TaskDefinitionArn }},{{ mount_point.sourceVolume|default('') }},{{ mount_point.containerPath|default('') }},{{ mount_point.readOnly|default('-') }}
+              {% endfor %}
+            {% else %}
+              {{ result.AccountName }},{{ result.Region }},{{ result.TaskDefinitionArn }},,,
+            {% endif %}
+          {% endfor %}
+        insertafter: EOF
