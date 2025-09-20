@@ -51,3 +51,61 @@
             {% endif %}
           {% endfor %}
         insertafter: EOF
+        
+#-------------------------------------another option -----------------------------------------------
+
+# Playbook runs locally, not on remote hosts
+#- hosts: localhost
+#  gather_facts: false   # Skip gathering system facts to speed up execution
+#  vars:
+#    cl1: AccountName     # Column header for Account Name
+#    cl2: Region          # Column header for AWS Region
+  #  cl3: TaskDefinitionArn  # Column header for Task Definition ARN
+   # cl4: SourceVolume    # Column header for Source Volume
+   # cl5: ContainerPath   # Column header for Container Path
+   # cl6: ReadOnly        # Column header for ReadOnly flag
+
+  #tasks:
+    # Step 1: Read input CSV (nat.csv) containing TaskDefinitionArn, AccountName, and Region
+   # - name: Reading CSV File
+   #   read_csv:
+   #     path: nat.csv
+   #   register: arn   # Save parsed CSV content in variable 'arn'
+
+    # Step 2: Initialize an empty list to store processed results
+   # - name: Create empty list for results
+   #   set_fact:
+   #     results: []
+
+    # Step 3: Loop over each ARN from CSV and call AWS CLI to get ECS task definition details
+   # - name: Describing task definition
+   #   shell: aws ecs describe-task-definition --task-definition "{{ item.TaskDefinitionArn }}"
+   #   loop: "{{ arn.list }}"   # Loop through each CSV row
+   #   register: definition     # Store the CLI output in 'definition'
+
+    # Step 4: Extract relevant details (AccountName, Region, TaskDefinitionArn, MountPoints) 
+    # from AWS CLI JSON output and append to 'results' list
+   # - name: Adding data to results list
+   #   set_fact:
+   #     results: "{{ results + [{'AccountName': item.item.AccountName,
+   #                             'Region': item.item.Region,
+   #                             'TaskDefinitionArn': item.item.TaskDefinitionArn,
+   #                             'MountPoints': (item.stdout | from_json).taskDefinition.containerDefinitions[0].mountPoints }] }}"
+   #   loop: "{{ definition.results }}"
+
+    # Step 5: Generate final CSV file with headers and extracted data
+   # - name: Generate CSV file
+   #   copy:
+   #     dest: output.csv   # Destination file
+   #     content: |         # Inline Jinja2 template for CSV content
+#          {{ cl1 }},{{ cl2 }},{{ cl3 }},{{ cl4 }},{{ cl5 }},{{ cl6 }}
+ #         {% for result in results %}
+ #         {% if result.MountPoints %}
+ #         {% for mount_point in result.MountPoints %}
+ #         {{ result.AccountName }},{{ result.Region }},{{ result.TaskDefinitionArn }},{{ mount_point.sourceVolume|default('') }},{{ mount_point.containerPath|default('') }},{{ mount_point.readOnly|default('-') }}
+ #         {% endfor %}
+ #         {% else %}
+ #         {{ result.AccountName }},{{ result.Region }},{{ result.TaskDefinitionArn }},,,
+ #         {% endif %}
+ #         {% endfor %}
+
