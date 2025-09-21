@@ -52,7 +52,7 @@
           {% endfor %}
         insertafter: EOF
         
-#-------------------------------------another option to export data in csv-----------------------------------------------
+#------------------------------------another option to export data in csv-----------------------------------------------
 
 # Playbook runs locally, not on remote hosts
 #- hosts: localhost
