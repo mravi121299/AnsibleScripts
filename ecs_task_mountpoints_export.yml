@@ -54,7 +54,7 @@
         
 #------------------------------------another option to export data in csv-----------------------------------------------
 
-# Playbook runs locally, not on remote hosts
+# Playbook runs locally, not on remote servers
 #- hosts: localhost
 #  gather_facts: false   # Skip gathering system facts to speed up execution
 #  vars:
