@@ -22,9 +22,9 @@
       register: vpcs_result
       changed_when: false
 
-    - name: Debug VPCs Result
-      debug:
-        var: vpcs_result
+    #- name: Debug VPCs Result
+     # debug:
+      #  var: vpcs_result
 
     - name: Export data to CSV file
       lineinfile:
