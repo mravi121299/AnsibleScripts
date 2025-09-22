@@ -3,7 +3,7 @@
   gather_facts: no
 
   tasks:
-    - name: Listing Routes for desired condition Route Tables
+    - name: Listing Routes for desired condition (10.x.x.x) Route Tables
       command: >
         aws ec2 describe-route-tables \
         --query 'RouteTables[?Routes[?DestinationCidrBlock!=null && starts_with(DestinationCidrBlock, `10.`) && TransitGatewayId]].{RouteTableId: RouteTableId, VpcId: VpcId, VpcCidr: VpcId, Routes: Routes[?DestinationCidrBlock!=null && starts_with(DestinationCidrBlock, `10.`) && TransitGatewayId].{DestinationCidrBlock: DestinationCidrBlock, TransitGatewayId: TransitGatewayId, State: State}}' \
