@@ -1,0 +1,42 @@
+- name: CIDRs starts 10.x.x.x targeting Transit Gateway
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Listing Routes for desired condition Route Tables
+      command: >
+        aws ec2 describe-route-tables \
+        --query 'RouteTables[?Routes[?DestinationCidrBlock!=null && starts_with(DestinationCidrBlock, `10.`) && TransitGatewayId]].{RouteTableId: RouteTableId, VpcId: VpcId, VpcCidr: VpcId, Routes: Routes[?DestinationCidrBlock!=null && starts_with(DestinationCidrBlock, `10.`) && TransitGatewayId].{DestinationCidrBlock: DestinationCidrBlock, TransitGatewayId: TransitGatewayId, State: State}}' \
+      register: route_table_result
+      changed_when: false
+
+    - name: Debug Route Table data
+      debug:
+        var: route_table_result
+
+    - name: Get VPCs Name
+      command: >
+        aws ec2 describe-vpcs \
+        --query 'Vpcs[*].{VpcId: VpcId, VpcName: Tags[?Key==`Name`].Value | [0], VpcCidr: CidrBlock, CidrBlockAssociationSet: CidrBlockAssociationSet[].CidrBlock}' \
+        --output json
+      register: vpcs_result
+      changed_when: false
+
+    - name: Debug VPCs Result
+      debug:
+        var: vpcs_result
+
+    - name: Export data to CSV file
+      lineinfile:
+        path: output.csv
+        line: |
+          ,VpcName,VpcId,RouteTableId,DestinationCidrBlock,TransitGatewayId,State,CidrBlockAssociationSet
+          {% for route_table in route_table_result.stdout | from_json %}
+            {% set vpc_id = route_table.VpcId %}
+            {% set vpc_name = vpcs_result.stdout | from_json | json_query("[?VpcId=='" + vpc_id + "'].VpcName") | first %}
+            {% set vpc_cidr_association = vpcs_result.stdout | from_json | json_query("[?VpcId=='" + vpc_id + "'].CidrBlockAssociationSet") %}
+            {% for route in route_table.Routes %}
+            {{ vpc_name }},{{ vpc_id }},{{ route_table.RouteTableId }},{{ route.DestinationCidrBlock }},{{ route.TransitGatewayId }},{{ route.State }},"{{ vpc_cidr_association }}"
+            {% endfor %}
+          {% endfor %}"
+        insertafter: EOF
